@@ -1,0 +1,70 @@
+==============================================================================
+aws sts get-caller-identity
+==============================================================================
+The aws sts get-caller-identity command is the AWS equivalent of the Linux whoami command. It is a vital tool for verifying which AWS identity is currently being used to run commands, especially when managing multiple accounts or profiles. 
+
+Why is it used to update information files?
+
+In automated environments and scripts, this command is often used to "fill in the blanks" for configuration or information files because:
+Verification: It confirms that your credentials are valid and active.
+Dynamic ID Retrieval: It is the most reliable way to programmatically fetch your AWS Account ID without hardcoding it, which is essential for cross-account scripts.
+Environment Context: It identifies exactly which IAM Role or User is active, preventing accidental deployments to the wrong account (e.g., using a Prod profile instead of Dev).
+Zero Permissions Required: Uniquely, this command always works—it does not require any IAM permissions to run, making it the perfect first step for any script to "check in" with AWS. 
+
+Understanding the Output
+
+The command returns three critical pieces of information: 
+Account: The 12-digit AWS Account ID where the credentials live.
+Arn: The full "Amazon Resource Name" of the identity (e.g., arn:aws:iam::123456789012:user/YourName).
+UserId: A unique internal identifier for the entity. 
+
+==============================================================================
+aws ec2 describe-images `
+   --region ap-south-1 `
+   --image-ids ami-051a31ab2f4d498f5
+==============================================================================
+This command is the "Deep Dive Inspection" for a specific AMI. While describe-images with filters is for searching, using it with a specific --image-ids is for verifying the exact details of a template you already found. AWS CLI describe-images Reference
+
+What this specific command does:
+Targeted Lookup: It bypasses the entire AWS library and pulls the metadata for only ami-051a31ab2f4d498f5.
+Region Specific: It looks in Mumbai (ap-south-1). Remember, AMI IDs are unique to their region; this ID won't work in us-east-1. AWS AMI Regionality Guide
+Detailed Metadata: It returns the "DNA" of that image, including:
+--Architecture: (x86_64 or arm64/Graviton)
+--Root Device Name: (e.g., /dev/xvda)
+--Virtualization Type: (hvm)
+--Creation Date: Exactly when this version was published.
+--Block Device Mappings: The size and type of the EBS volume that will be created. Amazon Machine Images (AMI) Overview
+
+
+==============================================================================
+aws ec2 run-instances `
+    --image-id ami-051a31ab2f4d498f5 `
+    --instance-type t2.micro `
+    --key-name MyKey `
+    --security-group-ids sg-0c843cdfe4t4tg83 `
+    --count 1
+==============================================================================
+This is the "Deploy" command—the moment your virtual server actually starts breathing in the Mumbai data center. AWS CLI run-instances Reference
+
+What is happening behind the scenes?
+Request Sent: Your CLI sends a request to the ap-south-1 endpoint.
+Resource Allocation: AWS finds a physical host with enough CPU/RAM for a t2.micro.
+Boot Process: It uses ami-051a31ab2f4d498f5 (the OS blueprint you found earlier) to create a root EBS volume. Amazon EC2 Instance Launching
+Security Applied: It "wraps" the instance in sg-0c843cdfe4t4tg83, which controls who can talk to your server (e.g., SSH or Web traffic). Amazon EC2 Security Groups
+Authentication: It injects the public half of MyKey into the instance so you can eventually log in via SSH. Amazon EC2 Key Pairs
+
+
+==============================================================================
+aws ec2 describe-images `
+   --region ap-south-1 `
+   --owners amazon `
+   --filter "Name=description, Values=Amazon Linux 2023 AMI 2023.10.20260216.1 x86_64 HVM kernel-6.1"
+==============================================================================
+This command is a precision search using the human-readable Description field rather than the technical Name field. 
+It is particularly useful when you have the exact "display name" from the AWS Console and want to find its corresponding AMI ID via the CLI. 
+
+Why use the Description Filter?
+Console Matching: The Amazon EC2 Console often displays the Description more prominently than the Name. This command bridges that gap.
+Exact Versioning: By specifying 2023.10.20260216.1, you are ensuring that your script uses a specific, immutable version of the OS, 
+which is critical for production stability. Amazon Linux 2023 AMI Versions
+Regional Accuracy: Adding --region ap-south-1 ensures you are looking at the Mumbai inventory, as AMI IDs change across regions even if the description is the same.
