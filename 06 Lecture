@@ -1,0 +1,36 @@
+🔹 Create an instance
+aws ec2 run-instances `
+    --count 1 `
+    --region us-east-1 `
+    --image-id AMI-ID-XXXX `
+    --instance-type t2.micro `
+    --security-group-ids SECURITY-GROUP-NAME `
+    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=MyWebServer02}]' `
+    --query 'Instances[*].{ ID:InstanceId, Name:Tags[?Key==`Name`].Value|[0], PrivateIP:PrivateIpAddress, AZ:Placement.AvailabilityZone, LaunchTime:LaunchTime }' `
+    --output table
+
+🔹 Start an instance
+aws ec2 start-instances `
+    --instance-ids i-xxxxxxxxxxxxxxxxx `
+    --region us-east-1 `
+    --query "StartingInstances[*].{ID: InstanceId, State: CurrentState.Name}" `
+    --output table
+
+🔹 Stop an instance
+aws ec2 stop-instances `
+    --instance-ids i-xxxxxxxxxxxxxxxxx `
+    --region us-east-1 `
+    --query "StoppingInstances[*].{ID: InstanceId, State: CurrentState.Name}" `
+    --output table
+
+🔹 Reboot an instance
+aws ec2 reboot-instances `
+    --instance-ids i-xxxxxxxxxxxxxxxxx `
+    --region us-east-1
+
+🔹 Terminate an instance
+aws ec2 terminate-instances `
+    --instance-ids i-xxxxxxxxxxxxxxxxx `
+    --region us-east-1 `
+    --query "TerminatingInstances[*].{ID: InstanceId, State: CurrentState.Name}" `
+    --output table
